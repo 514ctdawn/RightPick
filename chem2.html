@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSE化學題目自動化生成系統</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 25px 30px;
+            border-bottom: 4px solid #2980b9;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.2rem;
+        }
+        
+        .subtitle {
+            margin-top: 8px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        .input-section, .output-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            border: 1px solid #e1e4e8;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        select:focus, input:focus, textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .generate-btn {
+            background-color: #3498db;
+            color: white;
+            flex: 2;
+        }
+        
+        .generate-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .format-btn {
+            background-color: #2ecc71;
+            color: white;
+            flex: 1;
+        }
+        
+        .format-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .clear-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .clear-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .output-section {
+            background-color: white;
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .output-header h2 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .question-output {
+            min-height: 300px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+            white-space: pre-wrap;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        
+        .chem-example {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .chem-example h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .chem-formatted {
+            font-size: 18px;
+            color: #2c3e50;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        sub, sup {
+            font-size: 0.8em;
+        }
+        
+        sub {
+            vertical-align: sub;
+        }
+        
+        sup {
+            vertical-align: super;
+        }
+        
+        .history-section {
+            width: 100%;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            border: 1px solid #e1e4e8;
+        }
+        
+        .history-item {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .history-item:hover {
+            background-color: #f0f7ff;
+            transform: translateX(5px);
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .input-section, .output-section {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DSE化學題目自動化生成系統</h1>
+            <p class="subtitle">專為香港中學文憑考試設計 • 自動處理化學式上下標格式</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <h2>題目設定</h2>
+                
+                <div class="form-group">
+                    <label for="topic">選擇主題</label>
+                    <select id="topic">
+                        <option value="stoichiometry">化學計量</option>
+                        <option value="acid_base">酸、鹼和鹽</option>
+                        <option value="electrochemistry">電化學</option>
+                        <option value="organic">有機化學</option>
+                        <option value="periodic">周期表與元素性質</option>
+                        <option value="kinetics">反應動力學</option>
+                        <option value="equilibrium">化學平衡</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="difficulty">難度級別</label>
+                    <select id="difficulty">
+                        <option value="easy">基礎 (第1-2級)</option>
+                        <option value="medium" selected>中等 (第3-4級)</option>
+                        <option value="hard">進階 (第5級以上)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="questionType">題目類型</label>
+                    <select id="questionType">
+                        <option value="mc">多項選擇題</option>
+                        <option value="short">短答題</option>
+                        <option value="long" selected>長答題/結構題</option>
+                        <option value="calculation">計算題</option>
+                        <option value="explanation">解釋題</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="keywords">關鍵詞/化學式 (每行一個)</label>
+                    <textarea id="keywords" placeholder="例如：
+H2SO4
+NaOH
+摩爾計算
+氧化還原反應"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="additionalInfo">額外要求/指示</label>
+                    <textarea id="additionalInfo" placeholder="例如：
+- 題目需要包含化學方程式
+- 需要計算反應的摩爾數
+- 解釋反應機理"></textarea>
+                </div>
+                
+                <div class="button-group">
+                    <button class="generate-btn" id="generateBtn">生成題目</button>
+                    <button class="format-btn" id="formatBtn">格式化化學式</button>
+                </div>
+                
+                <button class="clear-btn" id="clearBtn">清除所有內容</button>
+                
+                <div class="chem-example">
+                    <h4>化學式格式化示例</h4>
+                    <p>輸入普通文本，點擊"格式化化學式"按鈕：</p>
+                    <div class="chem-formatted" id="chemExample">
+                        硫酸的化學式是 H2SO4，水是 H2O，二氧化碳是 CO2。
+                        氧化還原反應中，MnO4- 在酸性環境下被還原為 Mn2+。
+                    </div>
+                    <p>系統會自動識別化學式並添加正確的上下標格式。</p>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <div class="output-header">
+                    <h2>生成的題目</h2>
+                    <button class="format-btn" id="copyBtn">複製題目</button>
+                </div>
+                
+                <div id="statusMessage" class="status"></div>
+                
+                <div class="question-output" id="questionOutput">
+                    <p>請在左側設定題目參數，然後點擊"生成題目"按鈕。</p>
+                    <p>生成的題目將顯示在這裡，並自動使用正確的化學式格式。</p>
+                    
+                    <h3>示例題目：</h3>
+                    <p>1. 在酸催化下，乙醇(CH<sub>3</sub>CH<sub>2</sub>OH)與丙酸(C<sub>2</sub>H<sub>5</sub>COOH)反應生成酯和水。</p>
+                    <p>(a) 寫出該反應的平衡化學方程式，並命名生成的酯。(2分)</p>
+                    <p>(b) 若使用 2.3 g 乙醇與過量丙酸反應，計算理論上生成的酯的質量。(3分)</p>
+                    <p>[相對原子質量: H = 1, C = 12, O = 16]</p>
+                </div>
+                
+                <div class="history-section">
+                    <h3>最近生成的題目</h3>
+                    <div id="historyList">
+                        <div class="history-item" data-id="1">
+                            <strong>酸、鹼和鹽</strong> - 計算硫酸與氫氧化鈉中和反應的濃度
+                        </div>
+                        <div class="history-item" data-id="2">
+                            <strong>有機化學</strong> - 解釋烯烴的親電加成反應機制
+                        </div>
+                        <div class="history-item" data-id="3">
+                            <strong>電化學</strong> - 比較鋅銅電池與丹尼爾電池的異同
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>DSE化學題目自動化生成系統 © 2023 | 專為香港中學文憑考試化學科設計</p>
+            <p>本系統自動處理化學式上下標格式，確保符合DSE考試要求</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 元素引用
+            const generateBtn = document.getElementById('generateBtn');
+            const formatBtn = document.getElementById('formatBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const questionOutput = document.getElementById('questionOutput');
+            const statusMessage = document.getElementById('statusMessage');
+            const chemExample = document.getElementById('chemExample');
+            const keywordsTextarea = document.getElementById('keywords');
+            const historyList = document.getElementById('historyList');
+            
+            // 化學式格式化函數
+            function formatChemicalFormulas(text) {
+                // 替換化學式中的數字為下標
+                let formatted = text.replace(/([A-Z][a-z]*)(\d+)/g, '$1<sub>$2</sub>');
+                
+                // 處理離子電荷
+                formatted = formatted.replace(/([A-Za-z0-9]+)([+-])(\d*)/g, function(match, base, sign, num) {
+                    if (num) {
+                        return base + sign + '<sup>' + (sign === '+' ? '+' : '&minus;') + num + '</sup>';
+                    } else {
+                        return base + '<sup>' + (sign === '+' ? '+' : '&minus;') + '</sup>';
+                    }
+                });
+                
+                // 處理水合物
+                formatted = formatted.replace(/(·)(\d+)(H2O)/g, '·$2<sub>$2</sub>H<sub>2</sub>O');
+                
+                // 特殊處理常見化學式
+                const specialFormulas = {
+                    'H2O': 'H<sub>2</sub>O',
+                    'CO2': 'CO<sub>2</sub>',
+                    'CH4': 'CH<sub>4</sub>',
+                    'NH3': 'NH<sub>3</sub>',
+                    'H2SO4': 'H<sub>2</sub>SO<sub>4</sub>',
+                    'NaOH': 'NaOH',
+                    'HCl': 'HCl',
+                    'NaCl': 'NaCl',
+                    'CaCO3': 'CaCO<sub>3</sub>',
+                    'Fe2O3': 'Fe<sub>2</sub>O<sub>3</sub>',
+                    'C6H12O6': 'C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>',
+                    'CH3COOH': 'CH<sub>3</sub>COOH',
+                    'MnO4-': 'MnO<sub>4</sub><sup>&minus;</sup>',
+                    'SO4^2-': 'SO<sub>4</sub><sup>2&minus;</sup>',
+                    'NO3-': 'NO<sub>3</sub><sup>&minus;</sup>',
+                    'OH-': 'OH<sup>&minus;</sup>',
+                    'NH4+': 'NH<sub>4</sub><sup>+</sup>',
+                    'H3O+': 'H<sub>3</sub>O<sup>+</sup>'
+                };
+                
+                for (const [key, value] of Object.entries(specialFormulas)) {
+                    const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                    formatted = formatted.replace(regex, value);
+                }
+                
+                return formatted;
+            }
+            
+            // 示例格式化
+            chemExample.innerHTML = formatChemicalFormulas(chemExample.textContent);
+            
+            // 格式化按鈕事件
+            formatBtn.addEventListener('click', function() {
+                const keywords = keywordsTextarea.value;
+                if (keywords.trim()) {
+                    const formatted = formatChemicalFormulas(keywords);
+                    keywordsTextarea.value = formatted.replace(/<\/?sub>/g, '').replace(/<\/?sup>/g, '');
+                    
+                    // 顯示狀態消息
+                    showStatus('化學式已格式化！', 'success');
+                } else {
+                    showStatus('請先輸入化學式', 'error');
+                }
+            });
+            
+            // 生成題目按鈕事件
+            generateBtn.addEventListener('click', function() {
+                const topic = document.getElementById('topic').value;
+                const difficulty = document.getElementById('difficulty').value;
+                const questionType = document.getElementById('questionType').value;
+                const keywords = keywordsTextarea.value;
+                const additionalInfo = document.getElementById('additionalInfo').value;
+                
+                if (!keywords.trim() && !additionalInfo.trim()) {
+                    showStatus('請輸入關鍵詞或額外要求', 'error');
+                    return;
+                }
+                
+                // 顯示生成中狀態
+                showStatus('正在生成題目...', 'success');
+                
+                // 模擬生成過程（實際應用中會調用後端API）
+                setTimeout(() => {
+                    const question = generateQuestion(topic, difficulty, questionType, keywords, additionalInfo);
+                    questionOutput.innerHTML = formatChemicalFormulas(question);
+                    
+                    // 添加到歷史記錄
+                    addToHistory(topic, question);
+                    
+                    showStatus('題目已生成！', 'success');
+                }, 800);
+            });
+            
+            // 清除按鈕事件
+            clearBtn.addEventListener('click', function() {
+                if (confirm('確定要清除所有輸入內容嗎？')) {
+                    keywordsTextarea.value = '';
+                    document.getElementById('additionalInfo').value = '';
+                    questionOutput.innerHTML = '<p>請在左側設定題目參數，然後點擊"生成題目"按鈕。</p>';
+                    showStatus('已清除所有內容', 'success');
+                }
+            });
+            
+            // 複製按鈕事件
+            copyBtn.addEventListener('click', function() {
+                const textToCopy = questionOutput.innerText;
+                
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showStatus('題目已複製到剪貼板！', 'success');
+                    
+                    // 按鈕反饋
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = '已複製！';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    showStatus('複製失敗，請手動選取複製', 'error');
+                    console.error('複製失敗: ', err);
+                });
+            });
+            
+            // 歷史記錄點擊事件
+            historyList.addEventListener('click', function(e) {
+                const historyItem = e.target.closest('.history-item');
+                if (historyItem) {
+                    const topic = historyItem.querySelector('strong').textContent;
+                    const questionText = getHistoryQuestion(historyItem.dataset.id);
+                    
+                    questionOutput.innerHTML = formatChemicalFormulas(questionText);
+                    showStatus(`已載入歷史題目 (${topic})`, 'success');
+                }
+            });
+            
+            // 顯示狀態消息
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = 'status ' + type;
+                
+                // 3秒後自動隱藏
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+            
+            // 生成題目函數（模擬）
+            function generateQuestion(topic, difficulty, type, keywords, additionalInfo) {
+                const topicNames = {
+                    'stoichiometry': '化學計量',
+                    'acid_base': '酸、鹼和鹽',
+                    'electrochemistry': '電化學',
+                    'organic': '有機化學',
+                    'periodic': '周期表與元素性質',
+                    'kinetics': '反應動力學',
+                    'equilibrium': '化學平衡'
+                };
+                
+                const difficultyNames = {
+                    'easy': '基礎',
+                    'medium': '中等',
+                    'hard': '進階'
+                };
+                
+                const typeNames = {
+                    'mc': '多項選擇題',
+                    'short': '短答題',
+                    'long': '長答題/結構題',
+                    'calculation': '計算題',
+                    'explanation': '解釋題'
+                };
+                
+                const topicName = topicNames[topic];
+                const difficultyName = difficultyNames[difficulty];
+                const typeName = typeNames[type];
+                
+                // 基於主題和難度生成不同題目
+                let question = '';
+                
+                if (topic === 'stoichiometry') {
+                    question = `化學計量題目 (${difficultyName}難度)\n\n`;
+                    
+                    if (difficulty === 'easy') {
+                        question += `1. 計算 2.0 g 氫氣(H2)在標準溫度和壓力下的體積。\n`;
+                        question += `   (相對原子質量: H = 1.0; 摩爾體積 = 24.0 dm³ mol⁻¹)\n\n`;
+                    } else if (difficulty === 'medium') {
+                        question += `1. 硫酸(H2SO4)與氫氧化鈉(NaOH)發生中和反應：\n`;
+                        question += `   H2SO4 + 2NaOH → Na2SO4 + 2H2O\n`;
+                        question += `   若使用 0.1 M 硫酸 25.0 cm³ 完全中和 0.2 M 氫氧化鈉溶液，計算所需氫氧化鈉溶液的體積。(3分)\n\n`;
+                    } else {
+                        question += `1. 某金屬碳酸鹽 MCO3 加熱分解：\n`;
+                        question += `   MCO3(s) → MO(s) + CO2(g)\n`;
+                        question += `   取 2.00 g MCO3 加熱後，殘餘物質量為 1.12 g。\n`;
+                        question += `   (a) 計算生成 CO2 的質量。(2分)\n`;
+                        question += `   (b) 計算金屬 M 的相對原子質量。(3分)\n`;
+                        question += `   (c) 推斷金屬 M 的名稱，並解釋你的推斷。(2分)\n\n`;
+                    }
+                }
+                else if (topic === 'acid_base') {
+                    question = `酸、鹼和鹽題目 (${difficultyName}難度)\n\n`;
+                    
+                    if (difficulty === 'easy') {
+                        question += `1. 下列哪些是強酸？(可多選)\n`;
+                        question += `   A. HCl  B. CH3COOH  C. H2SO4  D. H2CO3  E. HNO3\n\n`;
+                    } else if (difficulty === 'medium') {
+                        question += `1. 解釋為何氨(NH3)的水溶液呈鹼性，寫出相關的化學方程式。(3分)\n\n`;
+                        question += `2. 實驗室中稀釋濃硫酸的正確步驟是什麼？為什麼必須遵循此步驟？(3分)\n\n`;
+                    } else {
+                        question += `1. 某學生進行滴定實驗，以氫氧化鈉溶液滴定未知濃度的鹽酸。\n`;
+                        question += `   實驗數據如下：\n`;
+                        question += `   - 鹽酸體積: 25.0 cm³\n`;
+                        question += `   - NaOH濃度: 0.100 mol dm⁻³\n`;
+                        question += `   - 滴定終點時 NaOH 體積: 22.4 cm³\n\n`;
+                        question += `   (a) 計算鹽酸的濃度。(2分)\n`;
+                        question += `   (b) 如果學生誤用甲基橙代替酚酞作為指示劑，對結果有何影響？解釋原因。(3分)\n`;
+                        question += `   (c) 描述使用 pH 計代替指示劑進行滴定的優點。(2分)\n\n`;
+                    }
+                }
+                else if (topic === 'organic') {
+                    question = `有機化學題目 (${difficultyName}難度)\n\n`;
+                    
+                    question += `1. 化合物 A (C4H8) 可使溴的四氯化碳溶液褪色。A 經酸性 KMnO4 氧化後生成丙酮(CH3COCH3)和二氧化碳。\n`;
+                    question += `   (a) 推斷 A 的結構式，並命名。(2分)\n`;
+                    question += `   (b) 寫出 A 與溴的反應方程式。(2分)\n`;
+                    question += `   (c) 解釋 A 的順反異構現象（如適用）。(2分)\n\n`;
+                    
+                    if (difficulty === 'hard') {
+                        question += `2. 苯甲酸(C6H5COOH)可通過以下步驟合成：\n`;
+                        question += `   步驟1: C6H6 + CH3Cl → C6H5CH3 + HCl\n`;
+                        question += `   步驟2: C6H5CH3 + 2KMnO4 → C6H5COOK + 2MnO2 + KOH + H2O\n`;
+                        question += `   步驟3: C6H5COOK + HCl → C6H5COOH + KCl\n\n`;
+                        question += `   (a) 寫出步驟1的反應類型及所需條件。(2分)\n`;
+                        question += `   (b) 若從 15.0 g 甲苯(C6H5CH3)開始，計算理論上可得苯甲酸的質量。(3分)\n`;
+                        question += `   (相對原子質量: H=1, C=12, O=16)\n\n`;
+                    }
+                }
+                else {
+                    // 默認題目
+                    question = `${topicName}題目 (${difficultyName}難度，${typeName})\n\n`;
+                    
+                    if (type === 'mc') {
+                        question += `1. 下列關於過渡元素的敘述，哪項正確？\n`;
+                        question += `   A. 全部都是金屬\n`;
+                        question += `   B. 都能形成有色離子\n`;
+                        question += `   C. 都有可變氧化態\n`;
+                        question += `   D. 以上全部正確\n\n`;
+                    } else if (type === 'calculation') {
+                        question += `1. 在 25°C 時，0.10 M 乙酸(CH3COOH)溶液的 pH 為 2.89。\n`;
+                        question += `   (a) 計算乙酸的酸解離常數 Ka。(3分)\n`;
+                        question += `   (b) 計算該溶液中乙酸的解離度。(2分)\n\n`;
+                    } else {
+                        question += `1. 解釋以下現象：\n`;
+                        question += `   (a) 氯化鈉晶體不能導電，而其水溶液或熔融狀態能導電。(3分)\n`;
+                        question += `   (b) 雖然氯的電負度比氧高，但水的沸點比氯化氫高。(3分)\n\n`;
+                    }
+                }
+                
+                // 添加關鍵詞相關內容
+                if (keywords.trim()) {
+                    question += `\n關鍵詞相關內容:\n`;
+                    question += `- ${keywords.split('\n').filter(k => k.trim()).join('\n- ')}\n`;
+                }
+                
+                // 添加額外要求
+                if (additionalInfo.trim()) {
+                    question += `\n額外要求:\n${additionalInfo}\n`;
+                }
+                
+                // 添加DSE評分標準提示
+                question += `\n---\n`;
+                question += `*本題目符合DSE化學科考試格式要求*\n`;
+                question += `*請確保答案中所有化學式使用正確格式*`;
+                
+                return question;
+            }
+            
+            // 添加到歷史記錄
+            function addToHistory(topic, question) {
+                const topicNames = {
+                    'stoichiometry': '化學計量',
+                    'acid_base': '酸、鹼和鹽',
+                    'electrochemistry': '電化學',
+                    'organic': '有機化學',
+                    'periodic': '周期表與元素性質',
+                    'kinetics': '反應動力學',
+                    'equilibrium': '化學平衡'
+                };
+                
+                const topicName = topicNames[topic] || '化學';
+                const questionPreview = question.split('\n')[0] + '...';
+                
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.dataset.id = Date.now(); // 使用時間戳作為ID
+                historyItem.innerHTML = `<strong>${topicName}</strong> - ${questionPreview.substring(0, 50)}`;
+                
+                historyList.insertBefore(historyItem, historyList.firstChild);
+                
+                // 限制歷史記錄數量
+                if (historyList.children.length > 5) {
+                    historyList.removeChild(historyList.lastChild);
+                }
+                
+                // 保存到本地存儲（簡單實現）
+                try {
+                    const historyData = {
+                        id: historyItem.dataset.id,
+                        topic: topicName,
+                        question: question,
+                        time: new Date().toLocaleString('zh-HK')
+                    };
+                    
+                    let existingHistory = JSON.parse(localStorage.getItem('dseChemHistory') || '[]');
+                    existingHistory.unshift(historyData);
+                    
+                    if (existingHistory.length > 10) {
+                        existingHistory = existingHistory.slice(0, 10);
+                    }
+                    
+                    localStorage.setItem('dseChemHistory', JSON.stringify(existingHistory));
+                } catch (e) {
+                    console.error('無法保存歷史記錄:', e);
+                }
+            }
+            
+            // 獲取歷史題目（模擬）
+            function getHistoryQuestion(id) {
+                try {
+                    const history = JSON.parse(localStorage.getItem('dseChemHistory') || '[]');
+                    const item = history.find(item => item.id == id);
+                    
+                    if (item) {
+                        return item.question;
+                    }
+                } catch (e) {
+                    console.error('無法讀取歷史記錄:', e);
+                }
+                
+                // 如果找不到，返回默認題目
+                return `歷史題目 #${id}\n\n這是一道之前生成的題目。\n請使用左側面板生成新的題目。`;
+            }
+            
+            // 從本地存儲加載歷史記錄
+            function loadHistoryFromStorage() {
+                try {
+                    const history = JSON.parse(localStorage.getItem('dseChemHistory') || '[]');
+                    
+                    historyList.innerHTML = '';
+                    
+                    history.forEach(item => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'history-item';
+                        historyItem.dataset.id = item.id;
+                        historyItem.innerHTML = `<strong>${item.topic}</strong> - ${item.question.substring(0, 50)}...`;
+                        historyList.appendChild(historyItem);
+                    });
+                } catch (e) {
+                    console.error('無法加載歷史記錄:', e);
+                }
+            }
+            
+            // 初始化時加載歷史記錄
+            loadHistoryFromStorage();
+        });
+    </script>
+</body>
+</html>
