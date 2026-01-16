@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI DSE 化學出卷系統 (Demo V2)</title>
+    
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --surface: #ffffff; --text: #1e293b; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); display: flex; height: 100vh; }
+        .sidebar { width: 300px; background-color: var(--surface); border-right: 1px solid #e2e8f0; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
+        .sidebar h2 { font-size: 1.2rem; color: var(--primary); margin-bottom: 0.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        label { font-weight: 600; font-size: 0.9rem; }
+        select, input[type="range"] { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; }
+        button { background-color: var(--primary); color: white; border: none; padding: 0.8rem; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: auto; }
+        button:hover { background-color: #1d4ed8; }
+        .main-content { flex: 1; padding: 3rem; overflow-y: auto; }
+        .header-section { margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
+        .result-card { background: var(--surface); border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: none; animation: fadeIn 0.5s ease-in; }
+        .marking-scheme { margin-top: 2rem; padding-top: 1rem; border-top: 2px dashed #cbd5e1; background-color: #f1f5f9; padding: 1.5rem; border-radius: 8px; }
+        .badge { background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-bottom: 1rem; display: inline-block; }
+        .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div><h2>🧪 DSE AI 出卷系統</h2><p style="font-size: 0.85rem; color: #64748b;">Prototype v0.2 (Fixed) | Powered by LLM</p></div>
+        <div class="control-group"><label>課題 (Topic)</label><select id="topicSelect"><option value="acids">Topic 4: Acids and Bases</option><option value="redox">Topic 7: Redox Reactions</option><option value="metals">Topic 3: Metals</option></select></div>
+        <div class="control-group"><label>題型 (Type)</label><select><option>Long Question (長題目)</option><option>Multiple Choice (MC)</option></select></div>
+        <div class="control-group"><label>難度 (Difficulty Level 1-5)</label><input type="range" min="1" max="5" value="3"></div>
+        <button onclick="generateQuestion()">✨ 立即生成題目 (Generate)</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header-section"><h1>試題預覽 (Question Preview)</h1><p>AI 將根據 DSE 課程指引生成題目，並自動排版化學式。</p></div>
+        <div id="loader" class="loader"></div>
+        <div id="resultArea" class="result-card">
+            <div class="badge">AI Generated • High Accuracy Format</div>
+            <div id="questionContent"></div>
+            <details class="marking-scheme"><summary style="cursor: pointer; color: var(--primary); font-weight: bold;">👁️ 點擊查看評分參考 (Marking Scheme)</summary><div id="markingContent" style="margin-top: 1rem;"></div></details>
+        </div>
+    </div>
+
+    <script>
+        // 修正後的資料：使用雙反斜線 \\ 確保不被吃掉
+        const demoData = {
+            "acids": {
+                q: `
+                    <p><strong>Question 1 (11 marks)</strong></p>
+                    <p>(a) Dilute ethanoic acid ($\\text{CH}_3\\text{COOH}$) is a weak acid, while dilute hydrochloric acid ($\\text{HCl}$) is a strong acid.</p>
+                    <p>i. Explain the term "weak acid". (1 mark)</p>
+                    <p>ii. Suggest a chemical test to distinguish between these two acids of the same concentration. (2 marks)</p>
+                    <br>
+                    <p>(b) $25.0 \\text{ cm}^3$ of $0.10 \\text{ M}$ $\\text{NaOH}$ is titrated with $0.10 \\text{ M}$ $\\text{H}_2\\text{SO}_4$.</p>
+                    <p>The equation for the reaction is:</p>
+                    $$2\\text{NaOH}(aq) + \\text{H}_2\\text{SO}_4(aq) \\rightarrow \\text{Na}_2\\text{SO}_4(aq) + 2\\text{H}_2\\text{O}(l)$$
+                    <p>Calculate the volume of $\\text{H}_2\\text{SO}_4$ required to reach the end point. (2 marks)</p>
+                `,
+                m: `
+                    <ul>
+                        <li><strong>(a)(i)</strong> An acid that only slightly dissociates / ionizes in water. [1]</li>
+                        <li><strong>(a)(ii)</strong> Add magnesium ribbon ($\\text{Mg}$). $\\text{HCl}$ reacts with more vigorous bubbling. [2]</li>
+                        <li><strong>(b)</strong><br>
+                            Moles of $\\text{NaOH} = 0.025 \\times 0.10 = 0.0025 \\text{ mol}$<br>
+                            Mole ratio $\\text{NaOH} : \\text{H}_2\\text{SO}_4 = 2 : 1$<br>
+                            Volume = $12.5 \\text{ cm}^3$ [2]
+                        </li>
+                    </ul>
+                `
+            },
+            "redox": {
+                q: `
+                    <p><strong>Question 2 (8 marks)</strong></p>
+                    <p>Consider the reaction between acidified potassium permanganate solution and iron(II) sulphate solution:</p>
+                    $$5\\text{Fe}^{2+}(aq) + \\text{MnO}_4^-(aq) + 8\\text{H}^+(aq) \\rightarrow 5\\text{Fe}^{3+}(aq) + \\text{Mn}^{2+}(aq) + 4\\text{H}_2\\text{O}(l)$$
+                    <p>(a) State the expected color change of the reaction mixture. (1 mark)</p>
+                    <p>(b) Identify the reducing agent in this reaction. Explain your answer in terms of oxidation number. (2 marks)</p>
+                `,
+                m: `
+                    <ul>
+                        <li><strong>(a)</strong> From purple to colourless / pale pink. [1]</li>
+                        <li><strong>(b)</strong> $\\text{Fe}^{2+}$ is the reducing agent. [1]<br>
+                        Its oxidation number increases from +2 to +3. [1]</li>
+                    </ul>
+                `
+            }
+        };
+
+        function generateQuestion() {
+            const topic = document.getElementById('topicSelect').value;
+            const data = demoData[topic] || demoData['redox'];
+            const loader = document.getElementById('loader');
+            const resultArea = document.getElementById('resultArea');
+            
+            resultArea.style.display = 'none';
+            loader.style.display = 'block';
+
+            setTimeout(() => {
+                loader.style.display = 'none';
+                document.getElementById('questionContent').innerHTML = data.q;
+                document.getElementById('markingContent').innerHTML = data.m;
+                resultArea.style.display = 'block';
+                // 強制重繪
+                MathJax.typesetPromise();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
